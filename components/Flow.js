@@ -5,6 +5,8 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   Controls,
+  updateEdge,
+  MiniMap
 } from 'react-flow-renderer';
 
 import Sidebar from '../components/SideBar';
@@ -24,10 +26,17 @@ const initialNodes = [
     data: { label: 'output node' },
     position: { x: 450, y: 5 },
   },
+  {
+    id: '3',
+    type: 'output',
+    data: { label: 'output node' },
+    position: { x: 450, y: 5 },
+  },
 ];
 
 const edges1 = [
-  { id: 'e1-2', source: '1', target: '2',animated: true, label: '1' },]
+  { id: 'e1-2', source: '1', target: '2', animated: true, label: '1', sourceHandle: 'a' },
+  { id: 'e1-3', source: '1', target: '3', animated: true, label: '1', sourceHandle: 'b' }]
 
 let id = 0;
 const getId = () => `dndnode_${id++}`;
@@ -37,13 +46,19 @@ const DnDFlow = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(edges1);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  
+  const onEdgeUpdate = useCallback(
+    (oldEdge, newConnection) => setEdges((els) => updateEdge(oldEdge, newConnection, els)),
+    []
+  );
 
+  const [nodeId, setNodeId] = useState();
   const [nodeName, setNodeName] = useState();
 
   useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => {
-        if (node.id === '1') {
+        if (node.id === nodeId) {
           // it's important that you create a new object here
           // in order to notify react flow about the change
           node.data = {
@@ -94,8 +109,8 @@ const DnDFlow = () => {
 
   return (
     <ReactFlowProvider>
-    <div className={`${styles.dndflow}`}>
-      <Sidebar />
+      <div className={`${styles.dndflow}`}>
+        <Sidebar />
         <div className={`${styles.reactflow_wrapper}`} ref={reactFlowWrapper}>
           <ReactFlow
             nodes={nodes}
@@ -104,15 +119,27 @@ const DnDFlow = () => {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onInit={setReactFlowInstance}
+            onEdgeUpdate={onEdgeUpdate}
             onDrop={onDrop}
             onDragOver={onDragOver}
             fitView
           >
+            <MiniMap />
             <Controls />
           </ReactFlow>
         </div>
-        <input value={nodeName} onChange={(evt) => setNodeName(evt.target.value)} />
-    </div>
+        <div>
+          <input value={nodeId} onChange={(evt) => setNodeId(evt.target.value)} />
+          <input value={nodeName} onChange={(evt) => setNodeName(evt.target.value)} />
+          {nodes.map((node) => {
+            return (
+              <div key={node.id}>
+                <p>{node.id}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </ReactFlowProvider>
   );
 };
